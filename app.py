@@ -14,7 +14,7 @@ def lettergrepen():
     naam = data.get('naam')
 
     # Nieuwe API-aanroep voor OpenAI versie >=1.0.0
-    response = openai.ChatCompletion.create(
+    response = openai.completions.create(
         model="gpt-3.5-turbo",  # Kies een geschikt model, bijvoorbeeld gpt-3.5-turbo
         messages=[
             {"role": "system", "content": "Je helpt bij het tellen van lettergrepen."},
