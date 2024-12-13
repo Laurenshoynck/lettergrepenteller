@@ -6,7 +6,13 @@ app = Flask(__name__)
 def lettergrepen():
     data = request.json
     naam = data.get('naam')
-   openai.api_key = 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
+
+    from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Laad de variabelen uit .env
+openai.api_key = os.getenv("OPENAI_API_KEY")
+    
     resultaat = {
         "naam": naam,
         "lettergrepen": 3,  # Voorbeeldwaarde
