@@ -7,11 +7,7 @@ def lettergrepen():
     data = request.json
     naam = data.get('naam')
 
-    from dotenv import load_dotenv
-import os
-
-load_dotenv()  # Laad de variabelen uit .env
-openai.api_key = os.getenv("OPENAI_API_KEY")
+ 
     
     resultaat = {
         "naam": naam,
