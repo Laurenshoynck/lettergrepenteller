@@ -13,10 +13,10 @@ def lettergrepen():
     data = request.json
     naam = data.get('naam')
 
-    # Nieuwe API-aanroep voor OpenAI versie >=1.0.0
-    response = openai.Completion.create(
-        model="gpt-3.5-turbo",  # Of een ander geschikt model zoals gpt-3.5-turbo
-        prompt=f"Tel de lettergrepen van het woord {naam}.",
+    # Gebruik de juiste API-aanroep voor chat modellen
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # Of een ander geschikt chat model
+        messages=[{"role": "user", "content": f"Tel de lettergrepen van het woord {naam}."}],
         max_tokens=10  # Beperk het aantal tokens om onnodige lange reacties te vermijden
     )
 
@@ -30,4 +30,3 @@ def home():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
