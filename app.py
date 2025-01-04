@@ -16,7 +16,7 @@ def lettergrepen():
     # Gebruik de juiste API-aanroep voor chat modellen
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",  # Of een ander geschikt chat model
-        messages=[{"role": "user", "content": f"Tel de lettergrepen van het woord {naam}. geef enkel het cijfer weer."}],
+        messages=[{"role": "user", "content": f"Tel de lettergrepen van het woord {naam} en geef aan op welke lettergreep de klemtoon ligt. Output format dictionary met keys num_lettergrepen en positie_klemtoon."}],
         max_tokens=10  # Beperk het aantal tokens om onnodige lange reacties te vermijden
     )
 
