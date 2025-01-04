@@ -15,7 +15,7 @@ def lettergrepen():
 
     # Nieuwe API-aanroep voor OpenAI versie >=1.0.0
     response = openai.Completion.create(
-        model="gpt-4o-mini",  # Of een ander geschikt model zoals gpt-3.5-turbo
+        model="gpt-3.5-turbo",  # Of een ander geschikt model zoals gpt-3.5-turbo
         prompt=f"Tel de lettergrepen van het woord {naam}.",
         max_tokens=10  # Beperk het aantal tokens om onnodige lange reacties te vermijden
     )
