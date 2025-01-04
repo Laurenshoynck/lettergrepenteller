@@ -14,11 +14,11 @@ def lettergrepen():
     naam = data.get('naam')
 
     # Nieuwe API-aanroep voor OpenAI versie >=1.0.0
-response = openai.Completion.create(
-    model="text-davinci-003",  # Of een ander geschikt model zoals gpt-3.5-turbo
-    prompt=f"Tel de lettergrepen van het woord {naam}.",
-    max_tokens=10  # Beperk het aantal tokens om onnodige lange reacties te vermijden
-)
+    response = openai.Completion.create(
+        model="text-davinci-003",  # Of een ander geschikt model zoals gpt-3.5-turbo
+        prompt=f"Tel de lettergrepen van het woord {naam}.",
+        max_tokens=10  # Beperk het aantal tokens om onnodige lange reacties te vermijden
+    )
 
     resultaat = response['choices'][0]['message']['content'].strip()
 
