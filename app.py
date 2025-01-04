@@ -16,7 +16,7 @@ def lettergrepen():
     # Gebruik de juiste API-aanroep voor chat modellen
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",  # Of een ander geschikt chat model
-        messages=[{"role": "user", "content": f"Tel de lettergrepen van het woord {naam} en geef aan op welke lettergreep de klemtoon ligt. Voorbeeld: woord = 'Laurens', output '2-1'"}],
+        messages=[{"role": "user", "content": f"This GPT is designed to assist Shopify users by analyzing names entered by customers, providing the number of syllables in each name, and indicating the stressed syllable for proper pronunciation. It aims to enhance user engagement and personalization within a Shopify store environment by quickly and accurately processing name input and delivering syllable counts and stress patterns."}],
         max_tokens=10  # Beperk het aantal tokens om onnodige lange reacties te vermijden
     )
 
