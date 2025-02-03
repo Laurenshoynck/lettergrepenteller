@@ -2,11 +2,13 @@ import openai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import os
+from flask_cors import CORS  # Importeer CORS
 
 load_dotenv()  # Laad de variabelen uit .env
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
+CORS(app)  # Schakel CORS in
 
 @app.route('/lettergrepen', methods=['POST'])
 def lettergrepen():
