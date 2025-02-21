@@ -17,11 +17,12 @@ CORS(app)
 JSON_FILE = "namen_database.json"
 
 def load_namen_data():
-    """Laad de naam-database uit JSON en print het aantal namen"""
+    """Laad de naam-database uit JSON en print de eerste 10 namen."""
     try:
         with open(JSON_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
             print(f"📂 JSON geladen: {len(data)} namen in database.")  # 🔹 Debugging log
+            print(f"🔍 Eerste 10 namen in JSON: {list(data.keys())[:10]}")  # Toon eerste 10 namen
             return data
     except FileNotFoundError:
         print("⚠️  JSON-bestand niet gevonden! Een nieuw bestand wordt aangemaakt.")
@@ -76,6 +77,12 @@ def lettergrepen():
             json.dump(namen_data, f, indent=4)
 
         print(f"📝 Nieuwe naam toegevoegd aan JSON: {naam_zoek} -> {resultaat}")
+
+        # ✅ Controleer of de naam echt is toegevoegd
+        if naam_zoek in namen_data:
+            print(f"✅ Naam is succesvol opgeslagen in JSON: {naam_zoek}")
+        else:
+            print(f"❌ Naam werd NIET opgeslagen in JSON: {naam_zoek}")
 
     return jsonify({"naam": naam, "resultaat": resultaat})
 
