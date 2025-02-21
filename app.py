@@ -1,67 +1,60 @@
-import json
 import openai
+import json
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import os
-from flask_cors import CORS  # Importeer CORS
+from flask_cors import CORS
+from unidecode import unidecode  # Voor accenten verwijderen
 
-load_dotenv()  # Laad de variabelen uit .env
+# Load API key en Flask setup
+load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
-CORS(app)  # Schakel CORS in
+CORS(app)
 
-# **Laad de namen-database in**
-DATABASE_PATH = "namen_database.json"
-
-def load_database():
-    """ Laadt de namen en lettergrepen uit de JSON-database. """
-    try:
-        with open(DATABASE_PATH, "r", encoding="utf-8") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        print("⚠️ Waarschuwing: namen_database.json niet gevonden!")
-        return {}
-
-namen_database = load_database()
+# 🔹 JSON-bestand inladen bij opstarten, zodat het niet telkens opnieuw hoeft.
+with open("namen_database.json", "r", encoding="utf-8") as f:
+    namen_data = json.load(f)
 
 @app.route('/lettergrepen', methods=['POST'])
 def lettergrepen():
     data = request.json
-    naam = data.get('naam').lower()  # Maak naam lowercase voor consistente zoekopdrachten
+    naam = data.get('naam')
 
     if not naam:
         return jsonify({"error": "Geen naam opgegeven"}), 400
 
-    # **STAP 1: Zoek de naam eerst in de database**
-    if naam in namen_database:
-        resultaat = namen_database[naam]
-        return jsonify({"naam": naam, "resultaat": resultaat, "bron": "database"})
+    # 🔹 Maak de naam lowercase en verwijder accenten voor een betere match
+    naam_zoek = unidecode(naam.lower())
 
-    # **STAP 2: Als naam niet in database staat, gebruik OpenAI**
-    prompt = (
-        f"Bepaal het aantal lettergrepen en de klemtoonpositie voor de naam '{naam}'. "
-        f"Houd rekening met de natuurlijke uitspraak zoals een moedertaalspreker dat zou doen. "
-        f"Bepaal de meest gangbare uitspraak en markeer de klemtoon op de meest logische lettergreep. "
-        f"Geef het antwoord in het exacte formaat 'aantal-klemtoon' (bijv. '2-1' voor Laurens of '3-2' voor Roswitha). "
-        f"Geef alleen het antwoord en geen verdere uitleg."
-    )
+    # 🔹 Stap 1: Check of de naam in de JSON staat
+    if naam_zoek in namen_data:
+        resultaat = namen_data[naam_zoek]
+        print(f"Naam gevonden in JSON: {naam_zoek} -> {resultaat}")
+    else:
+        # 🔹 Stap 2: Gebruik ChatGPT als backup
+        print(f"Naam niet gevonden in JSON, opvragen bij GPT: {naam_zoek}")
+        prompt = (
+            f"Bepaal het aantal lettergrepen en de klemtoonpositie voor de naam '{naam}'. "
+            f"Geef het antwoord in het exacte formaat 'aantal-klemtoon' (bijv. '2-1' voor Laurens of '3-2' voor Roswitha). "
+            f"Geef alleen het antwoord en geen verdere uitleg."
+        )
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=10  
-    )
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=10
+        )
 
-    resultaat = response['choices'][0]['message']['content'].strip()
+        resultaat = response['choices'][0]['message']['content'].strip()
 
-    # **STAP 3: Sla het nieuwe resultaat op in de database**
-    namen_database[naam] = resultaat
-    with open(DATABASE_PATH, "w", encoding="utf-8") as file:
-        json.dump(namen_database, file, ensure_ascii=False, indent=4)
+        # ✅ Optioneel: Nieuw resultaat opslaan in JSON voor volgende keer
+        namen_data[naam_zoek] = resultaat
+        with open("namen_database.json", "w", encoding="utf-8") as f:
+            json.dump(namen_data, f, indent=4)
 
-    return jsonify({"naam": naam, "resultaat": resultaat, "bron": "AI"})
-
+    return jsonify({"naam": naam, "resultaat": resultaat})
 
 @app.route('/')
 def home():
