@@ -17,13 +17,15 @@ CORS(app)
 JSON_FILE = "namen_database.json"
 
 def load_namen_data():
-    """Laad de naam-database uit JSON"""
+    """Laad de naam-database uit JSON en print het aantal namen"""
     try:
         with open(JSON_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            print(f"📂 JSON geladen: {len(data)} namen in database.")  # 🔹 Debugging log
+            return data
     except FileNotFoundError:
         print("⚠️  JSON-bestand niet gevonden! Een nieuw bestand wordt aangemaakt.")
-        return {}  # Lege dict als bestand niet bestaat
+        return {}
     except json.JSONDecodeError:
         print("⚠️  JSON-bestand bevat fouten! Het wordt opnieuw geformatteerd.")
         return {}
@@ -42,6 +44,9 @@ def lettergrepen():
     naam_zoek = unidecode(naam.strip().lower())
 
     print(f"🔍 Opgevraagde naam: '{naam_zoek}'")
+
+    # 🔹 Debugging: Print alle namen in JSON
+    print(f"📜 JSON bevat de volgende namen: {list(namen_data.keys())[:10]}...")
 
     # 🔹 Stap 1: Check of de naam in de JSON staat
     if naam_zoek in namen_data:
