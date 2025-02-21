@@ -4,34 +4,38 @@ from dotenv import load_dotenv
 import os
 import json
 from flask_cors import CORS
-from unidecode import unidecode  # Verwijdert accenten voor consistente naamvergelijking
-from waitress import serve  # Snellere productie-server i.p.v. standaard Flask server
+from unidecode import unidecode  # Verwijdert accenten
+from waitress import serve  # Production server
 
-# Laad API-sleutel uit .env bestand
+# ✅ Laad API-sleutel uit .env bestand
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Flask-app instellen
+# ✅ Flask-app instellen
 app = Flask(__name__)
 CORS(app)
 
-# Laad de JSON-database met namen
+# ✅ JSON-bestand met 17.000+ namen
 JSON_BESTAND = "namen_database.json"
 
+# ✅ Laden van JSON-lijst met optimalisatie
 try:
     with open(JSON_BESTAND, "r", encoding="utf-8") as f:
-        namen_data = json.load(f)
+        raw_data = json.load(f)
+    
+    # **Alle namen in JSON converteren naar lowercase**
+    namen_data = {unidecode(k).strip().lower(): v for k, v in raw_data.items()}
     print(f"✅ JSON geladen: {len(namen_data)} namen in database.")
 except Exception as e:
     print(f"⚠️ Fout bij het laden van de JSON: {e}")
     namen_data = {}  # Gebruik een lege dict als het laden mislukt
 
-# 📌 TESTROUTE: Controleer of de JSON correct is ingeladen
+# ✅ TESTROUTE: Controleer of JSON correct geladen is
 @app.route('/test-json', methods=['GET'])
 def test_json():
-    return jsonify({"namen": list(namen_data.keys())})  # Laat **alle** namen zien
+    return jsonify({"namen": list(namen_data.keys())[:20]})  # Laat de eerste 20 namen zien
 
-# 📌 HOOFDROUTE: Verwerk naam en geef lettergrepen + klemtoon
+# ✅ HOOFDROUTE: Verwerk naam en geef lettergrepen + klemtoon
 @app.route('/lettergrepen', methods=['POST'])
 def lettergrepen():
     data = request.json
@@ -40,16 +44,16 @@ def lettergrepen():
     if not naam:
         return jsonify({"error": "Geen naam opgegeven"}), 400
 
-    # Verwijder accenten en maak naam lowercase voor een consistente vergelijking
+    # **Verwijder accenten en maak naam lowercase**
     naam = unidecode(naam).strip().lower()
 
-    # 1️⃣ Eerst checken of naam in JSON staat
+    # 1️⃣ **Eerst checken of naam in JSON staat**
     if naam in namen_data:
         resultaat = namen_data[naam]
         print(f"✅ Naam '{naam}' gevonden in JSON: {resultaat}")
         return jsonify({"naam": naam, "resultaat": resultaat})
 
-    # 2️⃣ Naam niet gevonden? Vraag het aan GPT-4
+    # 2️⃣ **Naam niet gevonden? Vraag het aan GPT-4**
     print(f"🔍 Naam '{naam}' niet gevonden, raadpleeg GPT-4...")
 
     prompt = (
@@ -71,12 +75,11 @@ def lettergrepen():
         print(f"❌ Fout bij OpenAI API: {e}")
         return jsonify({"error": "Fout bij het ophalen van lettergrepen"}), 500
 
-# **HOMEPAGE**
+# ✅ HOMEPAGE
 @app.route('/')
 def home():
     return "Welkom bij de verbeterde lettergrepenteller API. Gebruik /lettergrepen voor resultaten."
 
-# Start de productie-server met `waitress`
+# ✅ Start de server met `waitress` voor productie
 if __name__ == '__main__':
-    print("🚀 API wordt gestart op poort 5000...")
     serve(app, host="0.0.0.0", port=5000)
