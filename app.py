@@ -5,7 +5,7 @@ import os
 import json
 from flask_cors import CORS
 from unidecode import unidecode  # Verwijdert accenten voor consistente naamvergelijking
-from functools import lru_cache  # Cache voor snelle zoekopdrachten
+from waitress import serve  # Snellere productie-server i.p.v. standaard Flask server
 
 # Laad API-sleutel uit .env bestand
 load_dotenv()
@@ -15,7 +15,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 app = Flask(__name__)
 CORS(app)
 
-# 📂 **Laad de JSON-database in RAM**
+# Laad de JSON-database met namen
 JSON_BESTAND = "namen_database.json"
 
 try:
@@ -26,21 +26,12 @@ except Exception as e:
     print(f"⚠️ Fout bij het laden van de JSON: {e}")
     namen_data = {}  # Gebruik een lege dict als het laden mislukt
 
-# **✅ CACHING VOOR SNELLERE ZOEKFUNCTIE**
-@lru_cache(maxsize=5000)  # Maximaal 5000 recente namen in cache
-def get_syllables_from_json(naam):
-    """ Haal lettergreepgegevens uit JSON-bestand, hoofdletter-onafhankelijk. """
-    naam = unidecode(naam).strip().lower()
-    return namen_data.get(naam, None)  # Geef None als naam niet bestaat
-
-
-# 📌 **TESTROUTE:** Check of de JSON correct is geladen
+# 📌 TESTROUTE: Controleer of de JSON correct is ingeladen
 @app.route('/test-json', methods=['GET'])
 def test_json():
-    return jsonify({"namen": list(namen_data.keys())[:10]})  # Laat eerste 10 namen zien
+    return jsonify({"namen": list(namen_data.keys())})  # Laat **alle** namen zien
 
-
-# 📌 **HOOFDROUTE:** Verwerk naam en geef lettergrepen + klemtoon
+# 📌 HOOFDROUTE: Verwerk naam en geef lettergrepen + klemtoon
 @app.route('/lettergrepen', methods=['POST'])
 def lettergrepen():
     data = request.json
@@ -49,16 +40,16 @@ def lettergrepen():
     if not naam:
         return jsonify({"error": "Geen naam opgegeven"}), 400
 
-    # ✅ **Stap 1: Naam normaliseren (accents verwijderen, lowercase)**
+    # Verwijder accenten en maak naam lowercase voor een consistente vergelijking
     naam = unidecode(naam).strip().lower()
 
-    # ✅ **Stap 2: Eerst checken of naam in JSON staat**
-    resultaat = get_syllables_from_json(naam)
-    if resultaat:
+    # 1️⃣ Eerst checken of naam in JSON staat
+    if naam in namen_data:
+        resultaat = namen_data[naam]
         print(f"✅ Naam '{naam}' gevonden in JSON: {resultaat}")
         return jsonify({"naam": naam, "resultaat": resultaat})
 
-    # ✅ **Stap 3: Naam niet gevonden? Raadpleeg GPT-4**
+    # 2️⃣ Naam niet gevonden? Vraag het aan GPT-4
     print(f"🔍 Naam '{naam}' niet gevonden, raadpleeg GPT-4...")
 
     prompt = (
@@ -80,14 +71,12 @@ def lettergrepen():
         print(f"❌ Fout bij OpenAI API: {e}")
         return jsonify({"error": "Fout bij het ophalen van lettergrepen"}), 500
 
-
 # **HOMEPAGE**
 @app.route('/')
 def home():
     return "Welkom bij de verbeterde lettergrepenteller API. Gebruik /lettergrepen voor resultaten."
 
-
+# Start de productie-server met `waitress`
 if __name__ == '__main__':
-    from waitress import serve  # Snellere productie-server i.p.v. Flask ingebouwde server
-    print("🚀 Server draait op poort 5000 met Waitress...")
+    print("🚀 API wordt gestart op poort 5000...")
     serve(app, host="0.0.0.0", port=5000)
