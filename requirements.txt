@@ -3,3 +3,4 @@ python-dotenv
 openai==0.28
 flask-cors
 unidecode 
+waitress
