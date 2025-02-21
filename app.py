@@ -4,34 +4,38 @@ from dotenv import load_dotenv
 import os
 import json
 from flask_cors import CORS
-from unidecode import unidecode  # Verwijdert accenten
+from unidecode import unidecode  # Verwijdert accenten voor consistente naamvergelijking
 
-# ✅ Laad API-sleutel en omgeving
+# 🔹 Laad API-sleutel uit .env bestand
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# ✅ Flask-app instellen
+# 🎵 Start Flask-app
 app = Flask(__name__)
 CORS(app)
 
-# ✅ JSON-database met namen laden
+# 📂 JSON-BESTAND met namen inladen
 JSON_BESTAND = "namen_database.json"
 
 try:
     with open(JSON_BESTAND, "r", encoding="utf-8") as f:
-        namen_data = json.load(f)
+        originele_namen_data = json.load(f)
+
+    # 🛠 Zet alle JSON-namen om naar lowercase voor consistente lookup
+    namen_data = {unidecode(k).strip().lower(): v for k, v in originele_namen_data.items()}
     print(f"✅ JSON geladen: {len(namen_data)} namen in database.")
 except Exception as e:
     print(f"⚠️ Fout bij het laden van de JSON: {e}")
-    namen_data = {}  # Lege dict als het laden mislukt
+    namen_data = {}  # Gebruik een lege dict als backup
 
-# ✅ TESTROUTE: Haal de volledige lijst van namen op
+
+# 📌 **TESTROUTE: Controleer JSON-inhoud**
 @app.route('/test-json', methods=['GET'])
 def test_json():
-    return jsonify({"namen": list(namen_data.keys())})  # Geeft **alle** namen terug
+    return jsonify({"namen": list(namen_data.keys())})  # Stuur alle namen terug
 
 
-# ✅ HOOFDROUTE: Verwerk naam en geef lettergrepen + klemtoon
+# 📌 **HOOFDROUTE: Lettergrepen en klemtoon zoeken**
 @app.route('/lettergrepen', methods=['POST'])
 def lettergrepen():
     data = request.json
@@ -40,17 +44,17 @@ def lettergrepen():
     if not naam:
         return jsonify({"error": "Geen naam opgegeven"}), 400
 
-    # 🔄 Verwijder accenten en zet naam in lowercase voor een consistente match
+    # 🔄 Normaliseer naam (lowercase, accenten verwijderen)
     naam = unidecode(naam).strip().lower()
 
-    # ✅ Check of de naam al in de JSON staat
+    # ✅ **STAP 1: Controleer of de naam in JSON staat**
     if naam in namen_data:
         resultaat = namen_data[naam]
         print(f"✅ Naam '{naam}' gevonden in JSON: {resultaat}")
         return jsonify({"naam": naam, "resultaat": resultaat})
 
-    # ❌ Naam niet gevonden? Vraag GPT-4
-    print(f"🔍 Naam '{naam}' niet gevonden, vraag GPT-4...")
+    # ❌ **STAP 2: Naam niet gevonden → Vraag GPT-4**
+    print(f"🔍 Naam '{naam}' niet gevonden, raadpleeg GPT-4...")
 
     prompt = (
         f"Bepaal het aantal lettergrepen en de klemtoonpositie voor de naam '{naam}'. "
@@ -72,11 +76,12 @@ def lettergrepen():
         return jsonify({"error": "Fout bij het ophalen van lettergrepen"}), 500
 
 
-# ✅ HOMEPAGE
+# **HOMEPAGE**
 @app.route('/')
 def home():
     return "Welkom bij de verbeterde lettergrepenteller API. Gebruik /lettergrepen voor resultaten."
 
 
+# **START DE SERVER**
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
